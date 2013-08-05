@@ -21,7 +21,7 @@ class Control(object):
         self.keys = pg.key.get_pressed()
         self.done = False
         self.player = player.Player((35,25),(21,15))
-        self.level = level.LevelMap(SHEET,"mymap.txt")
+        self.level = level.LevelMap(SHEET,"hilly.txt")
 
     def event_loop(self):
         """Let us quit and jump."""
