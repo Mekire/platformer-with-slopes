@@ -18,14 +18,15 @@ CAPTION = "Platformer Genesis Project"
 class Control(object):
     """Primary control flow."""
     def __init__(self):
+        """Initialize the display and create a player and level."""
         self.screen = pg.display.get_surface()
         self.screen_rect = self.screen.get_rect()
         self.clock = pg.time.Clock()
         self.fps = 60.0
         self.keys = pg.key.get_pressed()
         self.done = False
-        self.player = player.Player((35,25),(21,15))
         self.level = level.LevelMap(SHEET,"bigtest.txt",self.screen_rect.copy())
+        self.player = player.Player((50,self.level.rect.bottom-100),(21,15))
 
     def event_loop(self):
         """Let us quit and jump."""
