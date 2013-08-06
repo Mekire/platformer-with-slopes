@@ -1,7 +1,9 @@
 """
 This is a very basic map editor written with the purpose of quickly creating
 a testing environment.  Currently it is Python 2.x specific as it utilizes
-wx python gui elements.
+wx python gui elements.  Mouse selects tiles and places them (right button to
+delete tile); arrow keys pan the map. CTRL+L and CTRL+S open load and save
+dialogues.
 
 -Written by Sean J. McKiernan 'Mekire'
 """
@@ -20,7 +22,10 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
 
 
 class MapCreator(object):
+    """A simple map tile editor."""
     def __init__(self):
+        """Set up the display.  Get the pallet ready and divide the pallet
+        into cell subsurfaces."""
         self.screen = pg.display.get_surface()
         self.screen_rect = self.screen.get_rect()
         self.clock = pg.time.Clock()
@@ -39,13 +44,15 @@ class MapCreator(object):
         self.font = pg.font.SysFont("Arial",10)
 
     def save_map(self,directory="maps"):
+        """Uses a wx python widget for save map dialog."""
         wx_app = wx.App(False)
-        ask = wx.TextEntryDialog(None,"Save as:")
+        ask = wx.FileDialog(None, "Save As",directory, "",
+                            "Map files (*.txt,*.map)|*.txt;*.map",
+                            wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         ask.ShowModal()
-        result = ask.GetValue()
-        if result:
+        path = ask.GetPath()
+        if path:
             try:
-                path = os.path.join(directory,result)
                 with open(path,"wb") as myfile:
                     pickle.dump(self.map_dict,myfile)
                     print("Map saved.")
@@ -55,13 +62,15 @@ class MapCreator(object):
             print("File name not entered.  Data not saved.")
 
     def load_map(self,directory="maps"):
+        """Uses a wx python widget for load map dialog."""
         wx_app = wx.App(False)
-        ask = wx.TextEntryDialog(None,"Load file:")
+        ask = wx.FileDialog(None, "Open", "", "",
+                           "Map files (*.txt,*.map)|*.txt;*.map",
+                           wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         ask.ShowModal()
-        result = ask.GetValue()
-        if result:
+        path = ask.GetPath()
+        if path:
             try:
-                path = os.path.join(directory,result)
                 with open(path,"rb") as myfile:
                     self.map_dict = pickle.load(myfile)
                     print("Map loaded.")
@@ -71,12 +80,15 @@ class MapCreator(object):
             print("Filename not entered.  Cannot load data.")
 
     def change_selected(self,event):
+        """Changes the currently selected tile on the pallet."""
         if event.button == 1:
             mouse = event.pos
             if self.pal_rect.collidepoint(mouse):
                 self.selected = mouse[0]//32,mouse[1]//32
 
     def event_loop(self):
+        """Get mouse events for tile placement and pallet change; and
+        keyboard events for saving and loading."""
         for event in pg.event.get():
             self.keys = pg.key.get_pressed()
             if event.type == pg.QUIT or self.keys[pg.K_ESCAPE]:
@@ -129,6 +141,7 @@ class MapCreator(object):
         self.screen.fill((255,0,0),(256,0,32,288))
 
     def redraw_map(self):
+        """Itterate throw the current map_dict and redraw the tiles."""
         self.screen.fill((200,200,200))
         self.screen.fill(0,self.map_rect)
         for destin,target in self.map_dict.items():
@@ -138,6 +151,7 @@ class MapCreator(object):
         pg.draw.rect(self.screen,(255,0,0),self.map_rect,3)
 
     def draw_grid(self):
+        """Draws a blue grid to aid in tile placement."""
         self.screen.fill((255,0,0),(256+544+32,256,32,32))
         stop_x = self.map_rect.right+self.cell_size[0]
         for i in range(self.map_rect.x,stop_x,self.cell_size[0]):
@@ -146,6 +160,7 @@ class MapCreator(object):
             self.screen.fill((0,0,255),(self.map_rect.x,i,self.screen_rect.width,1))
 
     def render_numbers(self):
+        """Draws the coordinate numbers on the border of the grid."""
         for i in range(17):
             number = self.center_num_in_cell(i,0)
             self.screen.blit(number,(self.map_rect.x+32*i,256))
@@ -154,6 +169,7 @@ class MapCreator(object):
             self.screen.blit(number,(self.map_rect.right,32*j))
 
     def center_num_in_cell(self,number,index):
+        """Called by the render_numbers function to center number in a cell."""
         num = pg.Surface(self.cell_size).convert_alpha()
         num.fill((0,0,0,0))
         num_rect = num.get_rect()
@@ -163,6 +179,8 @@ class MapCreator(object):
         return num
 
     def check_panning(self):
+        """Checks the held keys and pans screen appropriately.  Timer used to
+        limit pan speed."""
         now = pg.time.get_ticks()
         if now - self.timer > 1000/10.0:
             self.timer = now
@@ -172,6 +190,7 @@ class MapCreator(object):
                         self.offset[i] += DIRECT_DICT[key][i]
 
     def update(self):
+        """Checks the user panning and then redraws everything."""
         self.check_panning()
         self.redraw_map()
         self.draw_grid()
@@ -179,6 +198,7 @@ class MapCreator(object):
         self.render_numbers()
 
     def main_loop(self):
+        """Where we stop nobody knows."""
         while not self.done:
             self.event_loop()
             self.update()
@@ -187,6 +207,8 @@ class MapCreator(object):
 
 
 def rip_from_sheet(sheet,cell_size,sheet_size):
+    """Takes a sheet image, a size of each cell, and a size of the
+    sheet (in cells).  Returns a dict of sheet coordinates to subsurfaces."""
     coord_dict = {}
     for j in range(sheet_size[1]):
         for i in range(sheet_size[0]):
@@ -205,7 +227,3 @@ if __name__ == "__main__":
     run_it.main_loop()
     pg.quit()
     sys.exit()
-
-
-
-

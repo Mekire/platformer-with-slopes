@@ -79,8 +79,9 @@ class LevelMap(object):
                            destination[1]*self.cell_size[1])
             screen_final = (destination[0]-self.viewport.x,
                             destination[1]-self.viewport.y)
-            if self.viewport[0]-32 <= destination[0] <= self.viewport.right: ##
-                self.viewport_image.blit(self.cells[target],screen_final)
+            if self.viewport.x-32 <= destination[0] <= self.viewport.right:
+                if self.viewport.y-32 <= destination[1] <= self.viewport.bottom:
+                    self.viewport_image.blit(self.cells[target],screen_final)
         player.draw(self.viewport_image,self.viewport)
         surface.blit(self.viewport_image,(0,0))
 
