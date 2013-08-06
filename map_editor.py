@@ -1,8 +1,22 @@
+"""
+This is a very basic map editor written with the purpose of quickly creating
+a testing environment.  Currently it is Python 2.x specific as it utilizes
+wx python gui elements.
+
+-Written by Sean J. McKiernan 'Mekire'
+"""
+
 import os
 import sys
 import pickle
 import wx
 import pygame as pg
+
+
+DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
+               pg.K_RIGHT : ( 1, 0),
+               pg.K_UP    : ( 0,-1),
+               pg.K_DOWN  : ( 0, 1)}
 
 
 class MapCreator(object):
@@ -17,9 +31,12 @@ class MapCreator(object):
         self.cell_size = (32,32)
         self.pal_rect = self.pallet.get_rect()
         self.map_rect = pg.Rect(288,0,544,256)
+        self.offset = [0,0]
+        self.timer = 0.0
         self.map_dict = {}
         self.cells = rip_from_sheet(SHEET,self.cell_size,(8,2))
         self.selected = (0,0)
+        self.font = pg.font.SysFont("Arial",10)
 
     def save_map(self,directory="maps"):
         wx_app = wx.App(False)
@@ -83,17 +100,11 @@ class MapCreator(object):
         self.change_selected(event)
         self.add_and_del(event)
 
-    def redraw_pallet(self):
-        """Redraws the pallet tiles and the selector rectangle."""
-        self.screen.fill(0,(0,0,256,288))
-        self.screen.blit(self.pallet,(0,0))
-        rect = (self.selected[0]*32,self.selected[1]*32,32,32)
-        pg.draw.rect(self.screen,(255,0,0),rect,1)
-
     def add_and_del(self,event):
         """Call appropriate function when clicking on the map area."""
         mouse = event.pos
-        coords = (mouse[0]-self.map_rect.x)//32,(mouse[1]-self.map_rect.y)//32
+        coords = ((mouse[0]-self.map_rect.x+self.offset[0]*32)//32,
+                  (mouse[1]-self.map_rect.y+self.offset[1]*32)//32)
         if self.map_rect.collidepoint(mouse):
             if event.button == 1:
                 self.add_tile(coords)
@@ -109,29 +120,68 @@ class MapCreator(object):
         """Add to map and dictionary."""
         self.map_dict[coords] = self.selected
 
+    def redraw_pallet(self):
+        """Redraws the pallet tiles and the selector rectangle."""
+        self.screen.fill(0,(0,0,256,288))
+        self.screen.blit(self.pallet,(0,0))
+        rect = (self.selected[0]*32,self.selected[1]*32,32,32)
+        pg.draw.rect(self.screen,(255,0,0),rect,1)
+        self.screen.fill((255,0,0),(256,0,32,288))
+
     def redraw_map(self):
         self.screen.fill((200,200,200))
         self.screen.fill(0,self.map_rect)
         for destin,target in self.map_dict.items():
-            destin = (destin[0]*32+self.map_rect.x,destin[1]*32+self.map_rect.y)
+            destin = (destin[0]*32+self.map_rect.x-self.offset[0]*32,
+                      destin[1]*32+self.map_rect.y-self.offset[1]*32)
             self.screen.blit(self.cells[target],destin)
         pg.draw.rect(self.screen,(255,0,0),self.map_rect,3)
-        self.draw_grid()
 
     def draw_grid(self):
+        self.screen.fill((255,0,0),(256+544+32,256,32,32))
         stop_x = self.map_rect.right+self.cell_size[0]
         for i in range(self.map_rect.x,stop_x,self.cell_size[0]):
             self.screen.fill((0,0,255),(i,0,1,self.screen_rect.height))
         for i in range(0,self.screen_rect.width,self.cell_size[1]):
             self.screen.fill((0,0,255),(self.map_rect.x,i,self.screen_rect.width,1))
 
+    def render_numbers(self):
+        for i in range(17):
+            number = self.center_num_in_cell(i,0)
+            self.screen.blit(number,(self.map_rect.x+32*i,256))
+        for j in range(8):
+            number = self.center_num_in_cell(j,1)
+            self.screen.blit(number,(self.map_rect.right,32*j))
+
+    def center_num_in_cell(self,number,index):
+        num = pg.Surface(self.cell_size).convert_alpha()
+        num.fill((0,0,0,0))
+        num_rect = num.get_rect()
+        rendered = self.font.render(str(self.offset[index]+number),True,(0,0,0))
+        rend_rect = rendered.get_rect(center=num_rect.center)
+        num.blit(rendered,rend_rect)
+        return num
+
+    def check_panning(self):
+        now = pg.time.get_ticks()
+        if now - self.timer > 1000/10.0:
+            self.timer = now
+            for key in DIRECT_DICT:
+                if self.keys[key]:
+                    for i in (0,1):
+                        self.offset[i] += DIRECT_DICT[key][i]
+
+    def update(self):
+        self.check_panning()
+        self.redraw_map()
+        self.draw_grid()
+        self.redraw_pallet()
+        self.render_numbers()
+
     def main_loop(self):
         while not self.done:
             self.event_loop()
-            self.screen.fill(0)
-            self.redraw_map()
-            self.redraw_pallet()
-            self.screen.fill((255,0,0),(256,0,32,600))
+            self.update()
             pg.display.update()
             self.clock.tick(self.fps)
 

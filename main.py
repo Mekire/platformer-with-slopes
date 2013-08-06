@@ -12,16 +12,20 @@ import level
 import player
 
 
+CAPTION = "Platformer Genesis Project"
+
+
 class Control(object):
     """Primary control flow."""
     def __init__(self):
         self.screen = pg.display.get_surface()
+        self.screen_rect = self.screen.get_rect()
         self.clock = pg.time.Clock()
         self.fps = 60.0
         self.keys = pg.key.get_pressed()
         self.done = False
         self.player = player.Player((35,25),(21,15))
-        self.level = level.LevelMap(SHEET,"hilly.txt")
+        self.level = level.LevelMap(SHEET,"bigtest.txt",self.screen_rect.copy())
 
     def event_loop(self):
         """Let us quit and jump."""
@@ -39,8 +43,10 @@ class Control(object):
     def update(self):
         """Call the update for the level and the actors."""
         self.screen.fill(0)
-        self.level.update(self.screen)
-        self.player.update(self.level,self.screen,self.keys)
+        self.player.update(self.level,self.keys)
+        self.level.update(self.screen,self.player)
+        caption = "{} - FPS: {:.2f}".format(CAPTION,self.clock.get_fps())
+        pg.display.set_caption(caption)
 
     def main_loop(self):
         """Run around."""

@@ -194,17 +194,21 @@ class Player(_Collision):
         if keys[pg.K_LEFT]:
             self.x_vel -= self.speed
 
-    def draw_detectors(self,surface):
+    def draw_detectors(self,surface,shift):
         """Draws the collisions detector rects for demonstration purposes."""
         for wreck in self.floor_detect_rects:
-            surface.fill((255,0,0),wreck)
-        surface.fill((0,255,255),self.wall_detect_rect)
+            surface.fill((255,0,0),wreck.move(shift))
+        surface.fill((0,255,255),self.wall_detect_rect.move(shift))
 
-    def update(self,level,surface,keys):
+    def update(self,level,keys):
         """Check keys, collisions, physics, and draw."""
         self.check_keys(keys)
         self.detect_wall(level)
         self.detect_ground(level)
         self.physics_update()
-        surface.blit(self.image,self.rect)
-        self.draw_detectors(surface)
+
+    def draw(self,surface,view_rect):
+        shift = (-view_rect[0],-view_rect[1])
+        rect = self.rect.move(shift)
+        surface.blit(self.image,rect)
+        self.draw_detectors(surface,shift)

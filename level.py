@@ -36,11 +36,12 @@ def rip_from_sheet(sheet,cell_size,sheet_size):
 
 class LevelMap(object):
     """Mangages maps created by our map editor."""
-    def __init__(self,sheet,mapname):
+    def __init__(self,sheet,mapname,viewport):
         self.pallet = sheet
+        self.viewport = viewport
+        self.viewport_image = pg.Surface(self.viewport.size).convert_alpha()
         self.cell_size = (32,32)
-        self.map_rect = pg.Rect(0,0,544,544)
-        self.map_dict = self.load_map(mapname)
+        self.rect,self.map_dict = self.load_map(mapname)
         self.rect_dict = self.make_rect_dict()
         self.cells = rip_from_sheet(self.pallet,self.cell_size,(8,2))
         self.height_dict = gen_height_map(self.cells)
@@ -50,7 +51,7 @@ class LevelMap(object):
         """Unpickle the requested file."""
         with open(os.path.join(directory,filename),"rb") as myfile:
             loaded_map = pickle.load(myfile)
-            return loaded_map
+        return self.preprocess_map(loaded_map)
 
     def make_rect_dict(self):
         """Make a dict of map location coordinates to rects for initial
@@ -69,9 +70,60 @@ class LevelMap(object):
             mask_dict[cell] = pg.mask.from_surface(self.cells[cell])
         return mask_dict
 
-    def update(self,surface):
+    def update(self,surface,player):
         """Redraw tiles to surface."""
+        self.update_viewport(player)
+        self.viewport_image.fill(0)
         for destination,target in self.map_dict.items():
-            destination = (destination[0]*self.cell_size[0]+self.map_rect.x,
-                           destination[1]*self.cell_size[1]+self.map_rect.y)
-            surface.blit(self.cells[target],destination)
+            destination = (destination[0]*self.cell_size[0],
+                           destination[1]*self.cell_size[1])
+            screen_final = (destination[0]-self.viewport.x,
+                            destination[1]-self.viewport.y)
+            if self.viewport[0]-32 <= destination[0] <= self.viewport.right: ##
+                self.viewport_image.blit(self.cells[target],screen_final)
+        player.draw(self.viewport_image,self.viewport)
+        surface.blit(self.viewport_image,(0,0))
+
+    def get_dimensions(self,map_dict):
+        """Find the rectangle size of the entire map."""
+        min_x = min(x for x,y in map_dict)
+        min_y = min(y for x,y in map_dict)
+        max_x = max(x for x,y in map_dict)
+        max_y = max(y for x,y in map_dict)
+        width,height = (max_x-min_x+1)*32,(max_y-min_y+1)*32
+        rect = pg.Rect(min_x*32,min_y*32,width,height)
+        return rect
+
+    def normalize_map(self,rect,map_dict):
+        """Re-map coordinates so that the topleft corner of the map is
+        at (0,0)"""
+        topleft = rect.x//32,rect.y//32
+        remapped = {}
+        if topleft != (0,0):
+            for coord in map_dict:
+                new_key = (coord[0]-topleft[0],coord[1]-topleft[1])
+                remapped[new_key] = map_dict[coord]
+        rect.topleft = (0,0)
+        return rect,remapped
+
+    def preprocess_map(self,map_dict):
+        """Find size of map and normalize its coordinates."""
+        map_rect = self.get_dimensions(map_dict)
+        return self.normalize_map(map_rect,map_dict)
+
+    def update_viewport(self,player):
+        """The viewport will stay centered on the player unless the player
+        approaches the edge of the map."""
+        width,height = self.viewport.size
+        if player.rect.centerx <= width//2:
+            self.viewport.x = 0
+        elif player.rect.centerx >= self.rect.width-width//2:
+            self.viewport.x = self.rect.width-width
+        else:
+            self.viewport.centerx = player.rect.centerx
+        if player.rect.centery <= height//2:
+            self.viewport.y = 0
+        elif player.rect.centery >= self.rect.height-height//2:
+            self.viewport.y = self.rect.height-height
+        else:
+            self.viewport.centery = player.rect.centery
