@@ -87,10 +87,10 @@ class LevelMap(object):
 
     def get_dimensions(self,map_dict):
         """Find the rectangle size of the entire map."""
-        min_x = min(x for x,y in map_dict)
-        min_y = min(y for x,y in map_dict)
-        max_x = max(x for x,y in map_dict)
-        max_y = max(y for x,y in map_dict)
+        min_x = min(x for (x,y) in map_dict)
+        min_y = min(y for (x,y) in map_dict)
+        max_x = max(x for (x,y) in map_dict)
+        max_y = max(y for (x,y) in map_dict)
         width,height = (max_x-min_x+1)*32,(max_y-min_y+1)*32
         rect = pg.Rect(min_x*32,min_y*32,width,height)
         return rect
@@ -115,16 +115,7 @@ class LevelMap(object):
     def update_viewport(self,player):
         """The viewport will stay centered on the player unless the player
         approaches the edge of the map."""
-        width,height = self.viewport.size
-        if player.rect.centerx <= width//2:
-            self.viewport.x = 0
-        elif player.rect.centerx >= self.rect.width-width//2:
-            self.viewport.x = self.rect.width-width
-        else:
-            self.viewport.centerx = player.rect.centerx
-        if player.rect.centery <= height//2:
-            self.viewport.y = 0
-        elif player.rect.centery >= self.rect.height-height//2:
-            self.viewport.y = self.rect.height-height
-        else:
-            self.viewport.centery = player.rect.centery
+        for i in (0,1):
+            minimal = max(0,player.rect.center[i]-self.viewport.size[i]//2)
+            maximal = self.rect.size[i]-self.viewport.size[i]
+            self.viewport[i] = min(minimal,maximal)

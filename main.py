@@ -43,7 +43,7 @@ class Control(object):
 
     def update(self):
         """Call the update for the level and the actors."""
-        self.screen.fill(0)
+        self.screen.fill((140,140,255))
         self.player.update(self.level,self.keys)
         self.level.update(self.screen,self.player)
         caption = "{} - FPS: {:.2f}".format(CAPTION,self.clock.get_fps())
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pg.init()
     pg.display.set_mode((544,256))
-    SHEET = pg.image.load("basic_tileset_big.png").convert()
+    SHEET = pg.image.load("tileset_skin.png").convert()
     SHEET.set_colorkey((255,0,255))
     run_it = Control()
     run_it.main_loop()
