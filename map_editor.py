@@ -39,7 +39,7 @@ class MapCreator(object):
         self.offset = [0,0]
         self.timer = 0.0
         self.map_dict = {}
-        self.cells = rip_from_sheet(SHEET,self.cell_size,(8,2))
+        self.cells = rip_from_sheet(SHEET,self.cell_size,(8,4))
         self.selected = (0,0)
         self.font = pg.font.SysFont("Arial",10)
 
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pg.init()
     pg.display.set_mode((864,288))
-    SHEET = pg.image.load("basic_tileset_big.png").convert()
+    SHEET = pg.image.load("tiles_edit.png").convert()
     SHEET.set_colorkey((255,0,255))
     run_it = MapCreator()
     run_it.main_loop()

@@ -43,7 +43,7 @@ class LevelMap(object):
         self.cell_size = (32,32)
         self.rect,self.map_dict = self.load_map(mapname)
         self.rect_dict = self.make_rect_dict()
-        self.cells = rip_from_sheet(self.pallet,self.cell_size,(8,2))
+        self.cells = rip_from_sheet(self.pallet,self.cell_size,(8,4))
         self.height_dict = gen_height_map(self.cells)
         self.mask_dict = self.make_mask_dict()
 

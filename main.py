@@ -62,7 +62,7 @@ if __name__ == "__main__":
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pg.init()
     pg.display.set_mode((544,256))
-    SHEET = pg.image.load("tileset_skin.png").convert()
+    SHEET = pg.image.load("tiles_edit.png").convert()
     SHEET.set_colorkey((255,0,255))
     run_it = Control()
     run_it.main_loop()
